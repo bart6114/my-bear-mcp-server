@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "bear": {
+      "command": "node",
+      "args": ["/path/to/my-bear-mcp-server/build/index.js", "--token", "YOUR_BEAR_TOKEN"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}

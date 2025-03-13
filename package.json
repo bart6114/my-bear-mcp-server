@@ -1,0 +1,24 @@
+{
+  "name": "my-bear-mcp-server",
+  "version": "1.0.0",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && chmod +x build/index.js",
+    "start": "node build/index.js",
+    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" ts-node --project tsconfig.node.json src/index.ts",
+    "test": "node test/test-bear-api.js --token YOUR_BEAR_TOKEN"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@types/node": "^22.13.10",
+    "axios": "^1.8.3",
+    "commander": "^13.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}
