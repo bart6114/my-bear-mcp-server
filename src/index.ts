@@ -15,7 +15,6 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { Command } from 'commander';
 import { BearAPI } from './bear-api.js';
-import { safeJSONParse } from './utils.js';
 
 // Define the command-line interface
 const program = new Command();
@@ -267,16 +266,54 @@ class BearMCPServer {
    * @returns Tool result
    */
   private async handleOpenNote(args: any) {
-    const result = await bearApi.openNote(args);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Note opened successfully.`,
-        },
-      ],
-    };
+    try {
+      const result = await bearApi.openNote(args);
+      
+      // Check if note content is available in the result
+      if (result && typeof result === 'object' && 'note' in result) {
+        // Limit content size to avoid 431 errors
+        let content = result.note;
+        const MAX_CONTENT_LENGTH = 10000;
+        let contentTruncated = false;
+        
+        if (content && content.length > MAX_CONTENT_LENGTH) {
+          content = content.substring(0, MAX_CONTENT_LENGTH) + '... [Content truncated due to size]';
+          contentTruncated = true;
+        }
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Note opened successfully.
+
+Note content:
+${content}${contentTruncated ? '\n\n[Note content was truncated to prevent 431 errors]' : ''}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Note opened successfully.`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error('Error handling open_note:', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error opening note: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   /**
@@ -285,16 +322,43 @@ class BearMCPServer {
    * @returns Tool result
    */
   private async handleCreateNote(args: any) {
-    const result = await bearApi.createNote(args);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Note created successfully with title: "${args.title}"`,
-        },
-      ],
-    };
+    try {
+      const result = await bearApi.createNote(args);
+      
+      // Check if identifier is available in the result
+      if (result && typeof result === 'object' && 'identifier' in result) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Note created successfully with title: "${args.title}"
+              
+Note ID: ${result.identifier}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Note created successfully with title: "${args.title}"`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error('Error handling create_note:', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error creating note: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   /**
@@ -303,16 +367,54 @@ class BearMCPServer {
    * @returns Tool result
    */
   private async handleAddText(args: any) {
-    const result = await bearApi.addText(args);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Text added successfully to note.`,
-        },
-      ],
-    };
+    try {
+      const result = await bearApi.addText(args);
+      
+      // Check if note content is available in the result
+      if (result && typeof result === 'object' && 'note' in result) {
+        // Limit content size to avoid 431 errors
+        let content = result.note;
+        const MAX_CONTENT_LENGTH = 10000;
+        let contentTruncated = false;
+        
+        if (content && content.length > MAX_CONTENT_LENGTH) {
+          content = content.substring(0, MAX_CONTENT_LENGTH) + '... [Content truncated due to size]';
+          contentTruncated = true;
+        }
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Text added successfully to note.
+              
+Updated note content:
+${content}${contentTruncated ? '\n\n[Note content was truncated to prevent 431 errors]' : ''}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Text added successfully to note.`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error('Error handling add_text:', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error adding text to note: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   /**
@@ -321,16 +423,126 @@ class BearMCPServer {
    * @returns Tool result
    */
   private async handleSearchNotes(args: any) {
-    const result = await bearApi.searchNotes(args);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Search performed successfully.`,
-        },
-      ],
-    };
+    try {
+      const result = await bearApi.searchNotes(args);
+      
+      // Check if notes array is available in the result
+      if (result && typeof result === 'object' && 'notes' in result) {
+        let notes;
+        try {
+          // Try to parse the notes if it's a string
+          notes = typeof result.notes === 'string' ? JSON.parse(result.notes) : result.notes;
+        } catch (e) {
+          notes = result.notes;
+        }
+        
+        if (!Array.isArray(notes) || notes.length === 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Search performed successfully in the Bear app, but no results were found.
+                
+Search parameters:
+${args.term ? `- Search term: ${args.term}` : ''}
+${args.tag ? `- Tag filter: ${args.tag}` : ''}`,
+              },
+            ],
+          };
+        }
+        
+        // Limit the number of notes to process to avoid 431 errors
+        const MAX_NOTES = 10;
+        const notesToProcess = notes.slice(0, MAX_NOTES);
+        const hasMoreNotes = notes.length > MAX_NOTES;
+        
+        // Get the full content of each note
+        const fullNotes = [];
+        for (const note of notesToProcess) {
+          try {
+            // Open each note to get its full content
+            const noteResult = await bearApi.openNote({
+              id: note.identifier,
+              show_window: false, // Don't open the note in Bear UI
+              open_note: false    // Don't display the note
+            });
+            
+            const tagsList = note.tags && Array.isArray(note.tags) ? `Tags: ${note.tags.join(', ')}` : '';
+            
+            // Limit content size to avoid 431 errors
+            let content = noteResult.note || 'Content not available';
+            const MAX_CONTENT_LENGTH = 5000;
+            if (content.length > MAX_CONTENT_LENGTH) {
+              content = content.substring(0, MAX_CONTENT_LENGTH) + '... [Content truncated due to size]';
+            }
+            
+            fullNotes.push({
+              title: note.title,
+              id: note.identifier,
+              tags: tagsList,
+              content: content
+            });
+          } catch (e) {
+            console.error(`Error getting content for note ${note.identifier}:`, e);
+            fullNotes.push({
+              title: note.title,
+              id: note.identifier,
+              tags: note.tags && Array.isArray(note.tags) ? `Tags: ${note.tags.join(', ')}` : '',
+              content: 'Error retrieving content'
+            });
+          }
+        }
+        
+        // Format the search results with full content
+        const formattedNotes = fullNotes.map(note => {
+          return `## ${note.title} (ID: ${note.id})
+${note.tags ? `${note.tags}\n` : ''}
+${note.content}
+---`;
+        }).join('\n\n');
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Search performed successfully in the Bear app.
+
+Search parameters:
+${args.term ? `- Search term: ${args.term}` : ''}
+${args.tag ? `- Tag filter: ${args.tag}` : ''}
+
+Found ${notes.length} matching notes${hasMoreNotes ? ` (showing first ${MAX_NOTES})` : ''}:
+
+${formattedNotes}${hasMoreNotes ? '\n\n[Additional notes were found but not displayed to prevent 431 errors]' : ''}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Search performed successfully in the Bear app, but no results were returned.
+              
+Search parameters:
+${args.term ? `- Search term: ${args.term}` : ''}
+${args.tag ? `- Tag filter: ${args.tag}` : ''}`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error('Error handling search_notes:', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error performing search: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   /**
@@ -339,16 +551,44 @@ class BearMCPServer {
    * @returns Tool result
    */
   private async handleGrabUrl(args: any) {
-    const result = await bearApi.grabURL(args);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `URL grabbed successfully: ${args.url}`,
-        },
-      ],
-    };
+    try {
+      const result = await bearApi.grabURL(args);
+      
+      // Check if identifier is available in the result
+      if (result && typeof result === 'object' && 'identifier' in result) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `URL grabbed successfully: ${args.url}
+              
+Note ID: ${result.identifier}
+Title: ${result.title || 'N/A'}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `URL grabbed successfully: ${args.url}`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error('Error handling grab_url:', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error grabbing URL: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   /**
@@ -356,16 +596,56 @@ class BearMCPServer {
    * @returns Tool result
    */
   private async handleGetTags() {
-    const result = await bearApi.getTags();
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Tags retrieved successfully.`,
-        },
-      ],
-    };
+    try {
+      const result = await bearApi.getTags();
+      
+      // Check if tags array is available in the result
+      if (result && typeof result === 'object' && 'tags' in result) {
+        let tags;
+        try {
+          // Try to parse the tags if it's a string
+          tags = typeof result.tags === 'string' ? JSON.parse(result.tags) : result.tags;
+        } catch (e) {
+          tags = result.tags;
+        }
+        
+        // Format the tags
+        const formattedTags = Array.isArray(tags) 
+          ? tags.map((tag: any) => `- ${tag.name}`).join('\n')
+          : 'No tags found or invalid response format.';
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Tags retrieved successfully from Bear:
+
+${formattedTags}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Tags retrieved successfully, but no tags were returned.`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error('Error handling get_tags:', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error retrieving tags: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   /**
@@ -374,16 +654,77 @@ class BearMCPServer {
    * @returns Tool result
    */
   private async handleOpenTag(args: any) {
-    const result = await bearApi.openTag(args);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Tag opened successfully: ${args.name}`,
-        },
-      ],
-    };
+    try {
+      const result = await bearApi.openTag(args);
+      
+      // Check if notes array is available in the result
+      if (result && typeof result === 'object' && 'notes' in result) {
+        let notes;
+        try {
+          // Try to parse the notes if it's a string
+          notes = typeof result.notes === 'string' ? JSON.parse(result.notes) : result.notes;
+        } catch (e) {
+          notes = result.notes;
+        }
+        
+        if (!Array.isArray(notes) || notes.length === 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Tag opened successfully: ${args.name}, but no notes were found with this tag.`,
+              },
+            ],
+          };
+        }
+        
+        // Limit the number of notes to process to avoid 431 errors
+        const MAX_NOTES = 50;
+        const notesToProcess = notes.slice(0, MAX_NOTES);
+        const hasMoreNotes = notes.length > MAX_NOTES;
+        
+        // Format the notes
+        const formattedNotes = notesToProcess.map((note: any) => {
+          const tagsList = note.tags && Array.isArray(note.tags) ? ` (Tags: ${note.tags.join(', ')})` : '';
+          return `- ${note.title} (ID: ${note.identifier})${tagsList}`;
+        }).join('\n');
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Tag opened successfully: ${args.name}
+
+Found ${notes.length} notes with this tag${hasMoreNotes ? ` (showing first ${MAX_NOTES})` : ''}:
+
+${formattedNotes}${hasMoreNotes ? '\n\n[Additional notes were found but not displayed to prevent 431 errors]' : ''}`,
+            },
+          ],
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Tag opened successfully: ${args.name}
+              
+No notes were returned for this tag.`,
+            },
+          ],
+        };
+      }
+    } catch (error) {
+      console.error('Error handling open_tag:', error);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error opening tag: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   /**

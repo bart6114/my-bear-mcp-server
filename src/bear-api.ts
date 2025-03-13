@@ -4,7 +4,9 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { encodeURIComponentSafe, formatTags, validateAndFormatBoolean, validateNonEmptyString } from './utils.js';
+import { createServer } from 'http';
+import { URL } from 'url';
+import { formatTags, validateAndFormatBoolean, validateNonEmptyString } from './utils.js';
 
 const execPromise = promisify(exec);
 
@@ -218,31 +220,117 @@ export class BearAPI {
    * @param params The parameters for the action
    * @returns The result of the command
    */
-  private async executeCommand(action: string, params: Record<string, string> = {}): Promise<string> {
-    // Build the URL
-    let url = `bear://x-callback-url/${action}`;
-    
-    // Add parameters
-    const queryParams = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== null) {
-        queryParams.append(key, value);
-      }
-    }
-    
-    const queryString = queryParams.toString();
-    if (queryString) {
-      url += `?${queryString}`;
-    }
-    
-    // Execute the command
-    try {
-      const { stdout } = await execPromise(`open "${url}"`);
-      return stdout;
-    } catch (error) {
-      console.error('Error executing Bear command:', error);
-      throw new Error(`Failed to execute Bear command: ${error}`);
-    }
+  private async executeCommand(action: string, params: Record<string, string> = {}): Promise<Record<string, any>> {
+    return new Promise((resolve, reject) => {
+      // Create a local HTTP server to receive the callback
+      const server = createServer(async (req, res) => {
+        try {
+          // Check for 431 error in request
+          if (req.method === 'GET' && req.url && req.url.length > 8000) {
+            console.warn('Warning: Received a very large callback URL. This might cause 431 errors.');
+          }
+          
+          // Parse the URL and query parameters
+          const parsedUrl = new URL(req.url || '', 'http://localhost');
+          const queryParams = parsedUrl.searchParams;
+          
+          // Send a response to Bear
+          res.writeHead(200, { 'Content-Type': 'text/plain' });
+          res.end('Callback received');
+          
+          // Close the server
+          server.close();
+          
+          // Process the callback data
+          const callbackData: Record<string, any> = {};
+          for (const [key, value] of queryParams.entries()) {
+            try {
+              // Try to parse as JSON first
+              callbackData[key] = JSON.parse(value);
+            } catch (e) {
+              // If not JSON, use the raw value
+              callbackData[key] = value;
+            }
+          }
+          
+          // Resolve the promise with the callback data
+          resolve(callbackData);
+        } catch (error) {
+          console.error('Error processing callback:', error);
+          reject(error);
+        }
+      });
+      
+      // Start the server on a random port
+      server.listen(0, 'localhost', async () => {
+        try {
+          // Get the port number
+          const address = server.address();
+          if (!address || typeof address === 'string') {
+            throw new Error('Failed to get server address');
+          }
+          const port = address.port;
+          
+          // Build the callback URL - keep it simple to avoid large headers
+          const callbackUrl = `http://localhost:${port}`;
+          
+          // Build the Bear URL
+          let url = `bear://x-callback-url/${action}`;
+          
+          // Add parameters
+          const queryParams = new URLSearchParams();
+          
+          // Check if any parameter values are too large and might cause 431 errors
+          for (const [key, value] of Object.entries(params)) {
+            if (value !== undefined && value !== null) {
+              // If the value is very large, log a warning
+              if (typeof value === 'string' && value.length > 2000) {
+                console.warn(`Warning: Parameter '${key}' has a large value (${value.length} chars). This might cause 431 errors.`);
+              }
+              queryParams.append(key, value);
+            }
+          }
+          
+          // Add x-success parameter
+          queryParams.append('x-success', callbackUrl);
+          
+          // Add x-error parameter to handle errors
+          queryParams.append('x-error', callbackUrl);
+          
+          const queryString = queryParams.toString();
+          
+          // Check if the URL is too long and might cause issues
+          if (queryString.length > 8000) {
+            console.warn(`Warning: Generated URL is very long (${queryString.length} chars). This might cause 431 errors.`);
+          }
+          
+          if (queryString) {
+            url += `?${queryString}`;
+          }
+          
+          // Execute the command
+          console.log(`Executing Bear command: ${url}`);
+          // Use the specific 'open' command with the -a flag to open the URL with the Bear app
+          await execPromise(`open -a "Bear" "${url}"`);
+          
+          // Set a timeout to reject the promise if no callback is received
+          setTimeout(() => {
+            server.close();
+            reject(new Error('Callback timeout'));
+          }, 10000); // 10 seconds timeout
+        } catch (error) {
+          server.close();
+          console.error('Error executing Bear command:', error);
+          reject(new Error(`Failed to execute Bear command: ${error}`));
+        }
+      });
+      
+      // Handle server errors
+      server.on('error', (error) => {
+        console.error('Server error:', error);
+        reject(error);
+      });
+    });
   }
 
   /**
@@ -250,7 +338,7 @@ export class BearAPI {
    * @param params Parameters for opening the note
    * @returns The result of the command
    */
-  async openNote(params: OpenNoteParams): Promise<string> {
+  async openNote(params: OpenNoteParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.id) commandParams.id = params.id;
@@ -282,7 +370,7 @@ export class BearAPI {
    * @param params Parameters for creating the note
    * @returns The result of the command
    */
-  async createNote(params: CreateNoteParams): Promise<string> {
+  async createNote(params: CreateNoteParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.title) commandParams.title = params.title;
@@ -309,7 +397,7 @@ export class BearAPI {
    * @param params Parameters for adding text
    * @returns The result of the command
    */
-  async addText(params: AddTextParams): Promise<string> {
+  async addText(params: AddTextParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.id) commandParams.id = params.id;
@@ -344,7 +432,7 @@ export class BearAPI {
    * @param params Parameters for adding a file
    * @returns The result of the command
    */
-  async addFile(params: AddFileParams): Promise<string> {
+  async addFile(params: AddFileParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.id) commandParams.id = params.id;
@@ -380,7 +468,7 @@ export class BearAPI {
    * Gets all tags in Bear
    * @returns The result of the command
    */
-  async getTags(): Promise<string> {
+  async getTags(): Promise<Record<string, any>> {
     if (!this.token) {
       throw new Error('Token is required for getTags');
     }
@@ -393,7 +481,7 @@ export class BearAPI {
    * @param params Parameters for opening the tag
    * @returns The result of the command
    */
-  async openTag(params: OpenTagParams): Promise<string> {
+  async openTag(params: OpenTagParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     validateNonEmptyString(params.name, 'name');
@@ -411,7 +499,7 @@ export class BearAPI {
    * @param params Parameters for renaming the tag
    * @returns The result of the command
    */
-  async renameTag(params: RenameTagParams): Promise<string> {
+  async renameTag(params: RenameTagParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     validateNonEmptyString(params.name, 'name');
@@ -432,7 +520,7 @@ export class BearAPI {
    * @param params Parameters for deleting the tag
    * @returns The result of the command
    */
-  async deleteTag(params: DeleteTagParams): Promise<string> {
+  async deleteTag(params: DeleteTagParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     validateNonEmptyString(params.name, 'name');
@@ -450,7 +538,7 @@ export class BearAPI {
    * @param params Parameters for trashing the note
    * @returns The result of the command
    */
-  async trashNote(params: TrashParams): Promise<string> {
+  async trashNote(params: TrashParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.id) commandParams.id = params.id;
@@ -467,7 +555,7 @@ export class BearAPI {
    * @param params Parameters for archiving the note
    * @returns The result of the command
    */
-  async archiveNote(params: ArchiveParams): Promise<string> {
+  async archiveNote(params: ArchiveParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.id) commandParams.id = params.id;
@@ -484,7 +572,7 @@ export class BearAPI {
    * @param params Parameters for showing untagged notes
    * @returns The result of the command
    */
-  async showUntagged(params: UntaggedParams = {}): Promise<string> {
+  async showUntagged(params: UntaggedParams = {}): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.search) commandParams.search = params.search;
@@ -504,7 +592,7 @@ export class BearAPI {
    * @param params Parameters for showing todo notes
    * @returns The result of the command
    */
-  async showTodo(params: TodoParams = {}): Promise<string> {
+  async showTodo(params: TodoParams = {}): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.search) commandParams.search = params.search;
@@ -524,7 +612,7 @@ export class BearAPI {
    * @param params Parameters for showing today's notes
    * @returns The result of the command
    */
-  async showToday(params: TodayParams = {}): Promise<string> {
+  async showToday(params: TodayParams = {}): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.search) commandParams.search = params.search;
@@ -544,7 +632,7 @@ export class BearAPI {
    * @param params Parameters for showing locked notes
    * @returns The result of the command
    */
-  async showLocked(params: LockedParams = {}): Promise<string> {
+  async showLocked(params: LockedParams = {}): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.search) commandParams.search = params.search;
@@ -560,7 +648,7 @@ export class BearAPI {
    * @param params Parameters for searching
    * @returns The result of the command
    */
-  async searchNotes(params: SearchParams = {}): Promise<string> {
+  async searchNotes(params: SearchParams = {}): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     if (params.term) commandParams.term = params.term;
@@ -581,7 +669,7 @@ export class BearAPI {
    * @param params Parameters for grabbing the URL
    * @returns The result of the command
    */
-  async grabURL(params: GrabURLParams): Promise<string> {
+  async grabURL(params: GrabURLParams): Promise<Record<string, any>> {
     const commandParams: Record<string, string> = {};
     
     validateNonEmptyString(params.url, 'url');

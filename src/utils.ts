@@ -3,38 +3,6 @@
  */
 
 /**
- * Encodes a string for use in a URL
- * @param str The string to encode
- * @returns The encoded string
- */
-export function encodeURIComponentSafe(str: string): string {
-  return encodeURIComponent(str)
-    .replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
-}
-
-/**
- * Encodes a base64 string for use in a URL
- * @param base64 The base64 string to encode
- * @returns The encoded string
- */
-export function encodeBase64ForURL(base64: string): string {
-  return encodeURIComponentSafe(base64);
-}
-
-/**
- * Parses a JSON string safely, returning null if parsing fails
- * @param jsonString The JSON string to parse
- * @returns The parsed object or null if parsing fails
- */
-export function safeJSONParse(jsonString: string): any {
-  try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    return null;
-  }
-}
-
-/**
  * Converts a JavaScript object to a comma-separated list of tags
  * @param tags Array of tags or comma-separated string
  * @returns Comma-separated string of tags

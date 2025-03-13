@@ -89,6 +89,8 @@ Or directly:
 node build/index.js --token YOUR_BEAR_TOKEN
 ```
 
+The server runs on stdio (standard input/output), which is the standard transport mechanism for MCP servers. This allows Claude to communicate with the server through a standardized protocol when it's launched as a child process.
+
 ### Testing the Server
 
 To verify that the server is working correctly, you can run the test script:
@@ -158,7 +160,7 @@ Append or prepend text to a note identified by its title or id.
 
 ### search_notes
 
-Show search results in Bear for all notes or for a specific tag.
+Show search results in Bear for all notes or for a specific tag. Due to the x-callback-url data retrieval limitation, the search will be performed in the Bear app, but the results cannot be returned to the MCP server. You'll need to view the results directly in the Bear app.
 
 ```json
 {
@@ -181,7 +183,7 @@ Create a new note with the content of a web page.
 
 ### get_tags
 
-Return all the tags currently displayed in Bear's sidebar.
+Return all the tags currently displayed in Bear's sidebar. Due to the x-callback-url data retrieval limitation, the tags will be retrieved in the Bear app, but the results cannot be returned to the MCP server.
 
 ```json
 {}
@@ -189,7 +191,7 @@ Return all the tags currently displayed in Bear's sidebar.
 
 ### open_tag
 
-Show all the notes which have a selected tag in Bear.
+Show all the notes which have a selected tag in Bear. Due to the x-callback-url data retrieval limitation, the notes with the specified tag will be shown in the Bear app, but the results cannot be returned to the MCP server.
 
 ```json
 {
@@ -270,13 +272,24 @@ Here's how you might use this server with Claude:
 </use_mcp_tool>
 ```
 
-For more examples, see the [examples directory](./examples/).
+For more examples, see the [examples directory](./examples/), which includes:
+- `claude-integration.md`: Examples of how to use the Bear MCP server with Claude
+- `claude-mcp-settings.json`: Example configuration for Claude Desktop
+- `cline-mcp-settings.json`: Example configuration for Cline (VS Code Extension)
 
-## Limitations
+## Features and Improvements
 
-- This server only works on macOS, as it uses the `open` command to execute x-callback-url calls.
+- This server works on macOS, using the `open` command to execute x-callback-url calls.
+- The server now captures data returned via x-callback-url's x-success parameter, enabling full functionality for all Bear API features.
+- Functions like `search_notes`, `get_tags`, and `open_tag` now return the complete data from Bear, allowing Claude to process and display the results.
 - Some functionality requires a Bear API token.
 - Encrypted notes cannot be accessed via the API.
+
+### Recent Improvements
+
+- **X-Callback-URL Data Retrieval**: The server now uses a local HTTP server to capture data returned via x-callback-url's x-success parameter. This enables full functionality for all Bear API features.
+- **Enhanced Error Handling**: Better error handling and reporting for all API calls.
+- **Type Safety**: Improved TypeScript type definitions for better code reliability.
 
 ## License
 

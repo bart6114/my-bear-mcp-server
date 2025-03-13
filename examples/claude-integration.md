@@ -47,6 +47,20 @@ Here are some examples of how to interact with Bear through Claude:
 </use_mcp_tool>
 ```
 
+Example response:
+```
+Search performed successfully in the Bear app.
+
+Search parameters:
+- Search term: meeting
+- Tag filter: work
+
+Results:
+- Meeting Notes (ID: 123ABC-DEF456-789GHI), Tags: work, meetings
+- Team Sync (ID: 456DEF-789GHI-123ABC), Tags: work, meetings, team
+- Project Kickoff (ID: 789GHI-123ABC-456DEF), Tags: work, projects
+```
+
 ### Adding Text to a Note
 
 ```
@@ -74,6 +88,21 @@ Here are some examples of how to interact with Bear through Claude:
 {}
 </arguments>
 </use_mcp_tool>
+```
+
+Example response:
+```
+Tags retrieved successfully from Bear:
+
+- work
+- meetings
+- projects
+- personal
+- ideas
+- research
+- work/projects
+- work/meetings
+- personal/journal
 ```
 
 ### Creating a Note from a Web Page
@@ -104,6 +133,16 @@ Here are some examples of how to interact with Bear through Claude:
 }
 </arguments>
 </use_mcp_tool>
+```
+
+Example response:
+```
+Tag opened successfully: work/projects
+
+Notes with this tag:
+- Project Alpha (ID: 123ABC-DEF456-789GHI)
+- Project Beta Planning (ID: 456DEF-789GHI-123ABC)
+- Project Gamma Research (ID: 789GHI-123ABC-456DEF)
 ```
 
 ## Workflow Examples

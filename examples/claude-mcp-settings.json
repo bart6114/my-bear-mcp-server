@@ -1,4 +1,8 @@
 {
+  "// This file contains example configuration for using the Bear MCP server with Claude Desktop": "",
+  "// Path: ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)": "",
+  "// Path: %APPDATA%\\Claude\\claude_desktop_config.json (Windows)": "",
+  
   "mcpServers": {
     "bear": {
       "command": "node",
