@@ -431,7 +431,7 @@ ${formattedNotes}`,
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('Bear MCP server running on stdio');
+    console.error('🐻 \x1b[32mBear MCP server running on stdio\x1b[0m');
   }
 }
 
