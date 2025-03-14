@@ -1,146 +1,51 @@
 # Bear MCP Server
 
-A Model Context Protocol (MCP) server for interacting with the [Bear](https://bear.app/) note-taking app. This server allows AI assistants like Claude to interact with Bear through the MCP protocol.
+A Model Context Protocol (MCP) server that allows AI assistants like Claude to read notes from the [Bear](https://bear.app/) note-taking app.
 
-## Features
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue.svg)](https://github.com/bart6114/my-bear-mcp-server)
 
-- Read notes from Bear's SQLite database
-- Search for notes by text or tags
-- View tags
-- Browse notes by tag
+## Quick Start
 
-## Prerequisites
+### Option 1: Install from GitHub (Recommended)
 
-- Node.js 18 or higher
-- macOS with Bear app installed
-- Access to Bear's SQLite database (located at `~/Library/Group Containers/9K33E3U3T4.net.shinyfrog.bear/Application Data/database.sqlite`)
-
-## Installation
-
-### Manual Installation
-
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/bear-mcp-server.git
-   cd bear-mcp-server
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   ```
-
-3. Build the server:
-   ```
-   npm run build
-   ```
-
-## Usage
-
-Run the server:
-
+```bash
+npx github:bart6114/my-bear-mcp-server
 ```
+
+That's it! The server will start running and connect to your Bear database.
+
+### Option 2: Clone and Run Locally
+
+```bash
+# Clone the repository
+git clone https://github.com/bart6114/my-bear-mcp-server.git
+cd my-bear-mcp-server
+
+# Install dependencies
+npm install
+
+# Build and run
+npm run build
 npm start
 ```
 
-Or directly:
+## Prerequisites
 
-```
-node build/index.js
-```
+- macOS with Bear app installed
+- Node.js 18 or higher
 
-By default, the server will connect to Bear's SQLite database at the standard location. If your database is in a different location, you can specify it with the `--db-path` option:
+## Configuration
 
-```
-node build/index.js --db-path /path/to/your/database.sqlite
-```
+### For Claude Desktop App
 
-The server runs on stdio (standard input/output), which is the standard transport mechanism for MCP servers. This allows Claude to communicate with the server through a standardized protocol when it's launched as a child process.
-
-## Available Tools
-
-The Bear MCP server provides the following read-only tools:
-
-### open_note
-
-Open a note identified by its title or id and return its content.
-
-```json
-{
-  "id": "note-id",
-  "title": "Note Title",
-  "header": "Section Header",
-  "exclude_trashed": true
-}
-```
-
-### search_notes
-
-Search for notes by term or tag.
-
-```json
-{
-  "term": "project",
-  "tag": "work",
-  "max_notes": 50
-}
-```
-
-By default, search results are limited to 25 notes. You can adjust this limit using the `max_notes` parameter.
-
-### get_tags
-
-Return all the tags currently in Bear.
-
-```json
-{
-  "max_tags": 200
-}
-```
-
-By default, tag results are limited to 100 tags. You can adjust this limit using the `max_tags` parameter.
-
-### open_tag
-
-Show all the notes which have a selected tag.
-
-```json
-{
-  "name": "work/projects",
-  "max_notes": 50
-}
-```
-
-By default, results are limited to 25 notes. You can adjust this limit using the `max_notes` parameter.
-
-## Configuring Claude to Use the Bear MCP Server
-
-### Manual Configuration
-
-You need to add the server to Claude's MCP settings file:
-
-#### For Claude Desktop App
-
-Edit the configuration file at:
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-#### For Claude VS Code Extension
-
-Edit the configuration file at:
-- macOS: `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
-- Windows: `%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
-
-#### Configuration Example
-
-Add the following to your MCP settings file:
+Add this to your configuration file at `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "bear": {
-      "command": "node",
-      "args": ["/absolute/path/to/my-bear-mcp-server/build/index.js"],
+      "command": "npx",
+      "args": ["github:bart6114/my-bear-mcp-server"],
       "env": {},
       "disabled": false,
       "autoApprove": []
@@ -149,25 +54,45 @@ Add the following to your MCP settings file:
 }
 ```
 
-Replace `/absolute/path/to/my-bear-mcp-server` with the actual path to your server directory.
+### For Claude VS Code Extension
 
-## Example MCP Usage
+Add this to your configuration file at `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`:
 
-Here's how you might use this server with Claude:
-
-```
-<use_mcp_tool>
-<server_name>bear</server_name>
-<tool_name>open_note</tool_name>
-<arguments>
+```json
 {
-  "title": "Meeting Notes"
+  "mcpServers": {
+    "bear": {
+      "command": "npx",
+      "args": ["github:bart6114/my-bear-mcp-server"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
 }
-</arguments>
-</use_mcp_tool>
 ```
 
-Or to search for notes:
+## Available Tools
+
+The Bear MCP server provides these read-only tools:
+
+### open_note
+
+Open a note by title or ID.
+
+### search_notes
+
+Search for notes by term or tag.
+
+### get_tags
+
+Get all tags in Bear.
+
+### open_tag
+
+Show all notes with a specific tag.
+
+## Example Usage with Claude
 
 ```
 <use_mcp_tool>
@@ -175,22 +100,19 @@ Or to search for notes:
 <tool_name>search_notes</tool_name>
 <arguments>
 {
-  "term": "project",
-  "tag": "work"
+  "term": "project"
 }
 </arguments>
 </use_mcp_tool>
 ```
 
-## Features and Improvements
+## Advanced Options
 
-### Key Changes from Previous Version
+If your Bear database is in a non-standard location:
 
-- **Direct SQLite Access**: Instead of using Bear's x-callback-url API, this server now directly accesses Bear's SQLite database in read-only mode.
-- **No Bear App Required**: The server can now read notes even when the Bear app is not running.
-- **Read-Only Operations**: For safety and simplicity, this version only supports read operations (no creating or modifying notes).
-- **No Token Required**: Since we're directly accessing the database, no Bear API token is needed.
-- **Improved Performance**: Direct database access is faster than using x-callback-url.
+```bash
+npx github:bart6114/my-bear-mcp-server --db-path /path/to/your/database.sqlite
+```
 
 ## License
 

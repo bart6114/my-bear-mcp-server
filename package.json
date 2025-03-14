@@ -1,18 +1,25 @@
 {
-  "name": "my-bear-mcp-server",
+  "name": "bear-mcp-server",
   "version": "1.0.0",
   "main": "build/index.js",
   "type": "module",
+  "bin": {
+    "bear-mcp-server": "build/index.js"
+  },
   "scripts": {
     "build": "tsc && chmod +x build/index.js",
     "start": "node build/index.js",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" ts-node --project tsconfig.node.json src/index.ts",
     "test": "node test/test-bear-api.js"
   },
-  "keywords": [],
+  "keywords": ["bear", "mcp", "claude", "ai", "notes", "sqlite"],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "description": "A Model Context Protocol (MCP) server for interacting with the Bear note-taking app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bart6114/my-bear-mcp-server.git"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@types/node": "^22.13.10",
