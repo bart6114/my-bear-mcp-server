@@ -92,18 +92,40 @@ Get all tags in Bear.
 
 Show all notes with a specific tag.
 
-## Example Usage with Claude
+## Example Usage
+
+Here are examples of how to interact with the Bear MCP tools through AI assistants:
+
+### Searching for Notes
+
+Ask your AI assistant to search for notes containing specific terms:
 
 ```
-<use_mcp_tool>
-<server_name>bear</server_name>
-<tool_name>search_notes</tool_name>
-<arguments>
-{
-  "term": "project"
-}
-</arguments>
-</use_mcp_tool>
+Can you find all my notes about "project management"?
+```
+
+### Opening a Specific Note
+
+Ask your AI assistant to retrieve a specific note by title:
+
+```
+Show me my note titled "Meeting Notes - March 2025"
+```
+
+### Viewing Tags
+
+Ask your AI assistant to list all your Bear tags:
+
+```
+What tags do I have in my Bear notes?
+```
+
+### Finding Notes with a Specific Tag
+
+Ask your AI assistant to show notes with a particular tag:
+
+```
+Show me all notes with the #work tag
 ```
 
 ## Advanced Options
