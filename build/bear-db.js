@@ -18,7 +18,7 @@ export class BearDB {
         try {
             // Open the database in read-only mode
             this.db = new Database(dbPath, { readonly: true });
-            console.log(`Connected to Bear database at ${dbPath} in read-only mode`);
+            console.error(`Connected to Bear database at ${dbPath} in read-only mode`);
         }
         catch (error) {
             console.error(`Failed to connect to Bear database at ${dbPath}:`, error);
