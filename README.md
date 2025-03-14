@@ -1,8 +1,12 @@
 # Bear MCP Server
 
-A Model Context Protocol (MCP) server that allows AI assistants like Claude to read notes from the [Bear](https://bear.app/) note-taking app.
+A Model Context Protocol (MCP) server that allows AI assistants like Claude to read notes from the [Bear](https://bear.app/) note-taking app. This implementation connects directly to the Bear SQLite database in a read-only mode, ensuring your notes remain safe and unmodified.
 
-[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue.svg)](https://github.com/bart6114/my-bear-mcp-server)
+[![Read-Only](https://img.shields.io/badge/Mode-Read%20Only-brightgreen.svg)](https://github.com/bart6114/my-bear-mcp-server)
+[![Bear App](https://img.shields.io/badge/For-Bear%20App-blue.svg)](https://bear.app)
+[![Works with Claude](https://img.shields.io/badge/Works%20with-Claude%20AI-blueviolet.svg)](https://claude.ai)
+[![TypeScript](https://img.shields.io/badge/Made%20with-TypeScript-007ACC.svg)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Quick Start
 
@@ -74,7 +78,7 @@ Add this to your configuration file at `~/Library/Application Support/Code/User/
 
 ## Available Tools
 
-The Bear MCP server provides these read-only tools:
+The Bear MCP server provides these read-only tools (all operations are non-destructive and cannot modify your Bear database):
 
 ### open_note
 
@@ -136,6 +140,24 @@ If your Bear database is in a non-standard location:
 npx github:bart6114/my-bear-mcp-server --db-path /path/to/your/database.sqlite
 ```
 
+## Technical Details
+
+### Read-Only Implementation
+
+This MCP server connects to your Bear SQLite database using a strict read-only connection. This is enforced at the database driver level:
+
+```typescript
+// From src/bear-db.ts
+this.db = new Database(dbPath, { readonly: true });
+```
+
+This ensures that:
+- No write operations can be performed on your database
+- Your notes and tags cannot be modified, deleted, or corrupted
+- The database connection will fail if write permissions are attempted
+
+All operations performed by this server are SELECT queries that only retrieve data without modifying it.
+
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
