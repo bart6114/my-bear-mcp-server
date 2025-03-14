@@ -38,7 +38,7 @@ const searchNotesSchema = {
     properties: {
         term: { type: 'string', description: 'String to search' },
         tag: { type: 'string', description: 'Tag to search into' },
-        max_notes: { type: 'number', description: 'Maximum number of notes to return (default: 25)' },
+        max_notes: { type: 'number', description: 'Maximum number of notes to return (default: 100)' },
     },
 };
 const getTagsSchema = {
@@ -51,7 +51,7 @@ const openTagSchema = {
     type: 'object',
     properties: {
         name: { type: 'string', description: 'Tag name' },
-        max_notes: { type: 'number', description: 'Maximum number of notes to return (default: 25)' },
+        max_notes: { type: 'number', description: 'Maximum number of notes to return (default: 100)' },
     },
     required: ['name'],
 };
@@ -201,8 +201,8 @@ ${args.tag ? `- Tag filter: ${args.tag}` : ''}`,
                     ],
                 };
             }
-            // Apply max_notes limit if specified (default: 25)
-            const maxNotes = args.max_notes !== undefined ? args.max_notes : 25;
+            // Apply max_notes limit if specified (default: 100)
+            const maxNotes = args.max_notes !== undefined ? args.max_notes : 100;
             const limitedNotes = notes.slice(0, maxNotes);
             const hasMoreNotes = notes.length > maxNotes;
             // Get the full content of each note
@@ -327,8 +327,8 @@ ${note.content}
                     ],
                 };
             }
-            // Apply max_notes limit if specified (default: 25)
-            const maxNotes = args.max_notes !== undefined ? args.max_notes : 25;
+            // Apply max_notes limit if specified (default: 100)
+            const maxNotes = args.max_notes !== undefined ? args.max_notes : 100;
             const limitedNotes = notes.slice(0, maxNotes);
             const hasMoreNotes = notes.length > maxNotes;
             // Format the notes
