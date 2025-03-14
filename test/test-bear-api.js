@@ -2,98 +2,40 @@
 /**
  * Test script for the Bear MCP Server
  * 
- * This script tests the basic functionality of the Bear API client.
- * Run it with your Bear API token to verify that the server is working correctly.
+ * This script tests the SQLite database connection functionality.
  * 
- * Usage: node test-bear-api.js --token YOUR_BEAR_TOKEN
+ * Usage: node test-bear-api.js
  */
 
-import { BearAPI } from '../build/bear-api.js';
-import { Command } from 'commander';
+import { BearDB } from '../build/bear-db.js';
 
-// Parse command-line arguments
-const program = new Command();
-program
-  .name('test-bear-api')
-  .description('Test the Bear API client')
-  .version('1.0.0')
-  .requiredOption('--token <token>', 'Bear API token')
-  .parse(process.argv);
+// Create the Bear DB client
+const bearDb = new BearDB();
 
-const options = program.opts();
-
-// Create the Bear API client
-const bearApi = new BearAPI({
-  token: options.token,
-});
-
-// Test functions
-async function testCreateNote() {
-  console.log('Testing create note...');
+// Test SQLite database connection
+function testDatabaseConnection() {
+  console.log('Testing SQLite database connection...');
   try {
-    const result = await bearApi.createNote({
-      title: 'Test Note from MCP Server',
-      text: '# Test Note\n\nThis note was created by the Bear MCP Server test script.',
-      tags: ['test', 'mcp'],
-      timestamp: true,
-    });
-    console.log('✅ Create note test passed');
+    // Try to get tags to verify connection works
+    const tags = bearDb.getTags();
+    console.log(`✅ Database connection test passed. Found ${tags.length} tags.`);
     return true;
   } catch (error) {
-    console.error('❌ Create note test failed:', error);
+    console.error('❌ Database connection test failed:', error);
     return false;
+  } finally {
+    // Close the database connection
+    bearDb.close();
   }
 }
 
-async function testGetTags() {
-  console.log('Testing get tags...');
-  try {
-    const result = await bearApi.getTags();
-    console.log('✅ Get tags test passed');
-    return true;
-  } catch (error) {
-    console.error('❌ Get tags test failed:', error);
-    return false;
-  }
-}
+// Run the test
+console.log('Starting Bear SQLite database test...');
+const passed = testDatabaseConnection();
 
-async function testSearchNotes() {
-  console.log('Testing search notes...');
-  try {
-    const result = await bearApi.searchNotes({
-      term: 'Test Note',
-    });
-    console.log('✅ Search notes test passed');
-    return true;
-  } catch (error) {
-    console.error('❌ Search notes test failed:', error);
-    return false;
-  }
-}
-
-// Run the tests
-async function runTests() {
-  console.log('Starting Bear API tests...');
-  console.log('Using token:', options.token);
-  
-  let passedTests = 0;
-  let totalTests = 3;
-  
-  if (await testCreateNote()) passedTests++;
-  if (await testGetTags()) passedTests++;
-  if (await testSearchNotes()) passedTests++;
-  
-  console.log(`\nTest results: ${passedTests}/${totalTests} tests passed`);
-  
-  if (passedTests === totalTests) {
-    console.log('✅ All tests passed! The Bear MCP Server is working correctly.');
-  } else {
-    console.log('❌ Some tests failed. Please check the error messages above.');
-  }
-}
-
-// Run the tests
-runTests().catch(error => {
-  console.error('Error running tests:', error);
+if (passed) {
+  console.log('\n✅ Test passed! The Bear MCP Server can connect to the SQLite database.');
+} else {
+  console.log('\n❌ Test failed. Please check the error messages above.');
   process.exit(1);
-});
+}
