@@ -191,13 +191,7 @@ class BearMCPServer {
         content: [
           {
             type: 'text',
-            text: `Note opened successfully.
-
-Title: ${result.title}
-ID: ${result.id}
-
-Note content:
-${content}`,
+            text: content,
           },
         ],
       };
@@ -289,16 +283,7 @@ ${note.content}
         content: [
           {
             type: 'text',
-            text: `Search performed successfully.
-
-Search parameters:
-${args.term ? `- Search term: ${args.term}` : ''}
-${args.tag ? `- Tag filter: ${args.tag}` : ''}
-
-Found ${notes.length} matching notes${hasMoreNotes ? ` (showing ${limitedNotes.length})` : ''}:
-${hasMoreNotes ? `\n(Note: Results limited to ${maxNotes} notes. Use max_notes parameter to adjust this limit.)\n` : ''}
-
-${formattedNotes}`,
+            text: formattedNotes,
           },
         ],
       };
@@ -347,11 +332,7 @@ ${formattedNotes}`,
         content: [
           {
             type: 'text',
-            text: `Tags retrieved successfully from Bear:
-${hasMoreTags ? `\nFound ${tags.length} tags (showing ${limitedTags.length})` : ''}
-${hasMoreTags ? `\n(Note: Results limited to ${maxTags} tags. Use max_tags parameter to adjust this limit.)\n` : ''}
-
-${formattedTags}`,
+            text: formattedTags,
           },
         ],
       };
@@ -404,10 +385,7 @@ ${formattedTags}`,
         content: [
           {
             type: 'text',
-            text: `Found ${notes.length} matching notes${hasMoreNotes ? ` (showing ${limitedNotes.length})` : ''} with tag: ${args.name}
-${hasMoreNotes ? `\n(Note: Results limited to ${maxNotes} notes. Use max_notes parameter to adjust this limit.)\n` : ''}
-
-${formattedNotes}`,
+            text: formattedNotes,
           },
         ],
       };
