@@ -40,6 +40,8 @@ interface NoteRecord {
   title: string;
   text: string;
   trashed: number;
+  creation_date: number;
+  modification_date: number;
 }
 
 /**
@@ -92,21 +94,23 @@ export class BearDB {
    * @param params Parameters for opening the note
    * @returns The note data
    */
-  getNoteByIdOrTitle(params: OpenNoteParams): { note: string; title: string; id: string } | null {
+  getNoteByIdOrTitle(params: OpenNoteParams): { note: string; title: string; id: string; creation_date: number; modification_date: number } | null {
     try {
       let note: NoteRecord | undefined;
       
       if (params.id) {
         // Get note by ID
         note = this.db.prepare(`
-          SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as text, ZTRASHED as trashed
+          SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as text, ZTRASHED as trashed, 
+          ZCREATIONDATE as creation_date, ZMODIFICATIONDATE as modification_date
           FROM ZSFNOTE
           WHERE ZUNIQUEIDENTIFIER = ?
         `).get(params.id) as NoteRecord | undefined;
       } else if (params.title) {
         // Get note by title
         note = this.db.prepare(`
-          SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as text, ZTRASHED as trashed
+          SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as text, ZTRASHED as trashed, 
+          ZCREATIONDATE as creation_date, ZMODIFICATIONDATE as modification_date
           FROM ZSFNOTE
           WHERE ZTITLE = ?
         `).get(params.title) as NoteRecord | undefined;
@@ -139,7 +143,9 @@ export class BearDB {
       return {
         note: noteText,
         title: note.title,
-        id: note.id
+        id: note.id,
+        creation_date: note.creation_date,
+        modification_date: note.modification_date
       };
     } catch (error) {
       console.error('Error getting note:', error);
@@ -152,12 +158,14 @@ export class BearDB {
    * @param params Parameters for searching
    * @returns Array of matching notes
    */
-  searchNotes(params: SearchParams): Array<{ identifier: string; title: string; tags: string[] }> {
+  searchNotes(params: SearchParams): Array<{ identifier: string; title: string; tags: string[]; creation_date: number; modification_date: number }> {
     try {
       let query = `
         SELECT 
           n.ZUNIQUEIDENTIFIER as identifier, 
-          n.ZTITLE as title
+          n.ZTITLE as title,
+          n.ZCREATIONDATE as creation_date,
+          n.ZMODIFICATIONDATE as modification_date
         FROM 
           ZSFNOTE n
         WHERE 
@@ -186,7 +194,7 @@ export class BearDB {
       }
       
       // Execute the query
-      const notes = this.db.prepare(query).all(...queryParams) as Array<{ identifier: string; title: string }>;
+      const notes = this.db.prepare(query).all(...queryParams) as Array<{ identifier: string; title: string; creation_date: number; modification_date: number }>;
       
       // Get tags for each note
       return notes.map((note) => {
@@ -194,7 +202,9 @@ export class BearDB {
         return {
           identifier: note.identifier,
           title: note.title,
-          tags
+          tags,
+          creation_date: note.creation_date,
+          modification_date: note.modification_date
         };
       });
     } catch (error) {
@@ -227,12 +237,14 @@ export class BearDB {
    * @param tagName The tag name
    * @returns Array of notes with the tag
    */
-  getNotesByTag(tagName: string): Array<{ identifier: string; title: string; tags: string[] }> {
+  getNotesByTag(tagName: string): Array<{ identifier: string; title: string; tags: string[]; creation_date: number; modification_date: number }> {
     try {
       const notes = this.db.prepare(`
         SELECT 
           n.ZUNIQUEIDENTIFIER as identifier, 
-          n.ZTITLE as title
+          n.ZTITLE as title,
+          n.ZCREATIONDATE as creation_date,
+          n.ZMODIFICATIONDATE as modification_date
         FROM 
           ZSFNOTE n
         JOIN 
@@ -244,7 +256,7 @@ export class BearDB {
           AND n.ZTRASHED = 0
         ORDER BY 
           n.ZCREATIONDATE DESC
-      `).all(tagName) as Array<{ identifier: string; title: string }>;
+      `).all(tagName) as Array<{ identifier: string; title: string; creation_date: number; modification_date: number }>;
       
       // Get tags for each note
       return notes.map((note) => {
@@ -252,7 +264,9 @@ export class BearDB {
         return {
           identifier: note.identifier,
           title: note.title,
-          tags
+          tags,
+          creation_date: note.creation_date,
+          modification_date: note.modification_date
         };
       });
     } catch (error) {

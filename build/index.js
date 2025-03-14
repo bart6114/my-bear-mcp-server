@@ -10,6 +10,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from '@modelcontextprotocol/sdk/types.js';
 import { Command } from 'commander';
 import { BearDB } from './bear-db.js';
+import { formatBearDate } from './utils.js';
 // Define the command-line interface
 const program = new Command();
 program
@@ -156,7 +157,11 @@ class BearMCPServer {
                     isError: true,
                 };
             }
-            let content = result.note;
+            // Format the creation and modification dates
+            const creationDate = formatBearDate(result.creation_date);
+            const modificationDate = formatBearDate(result.modification_date);
+            // Add title, creation and modification dates to the content
+            let content = `Title: ${result.title}\nCreated: ${creationDate}\nModified: ${modificationDate}\n\n${result.note}`;
             return {
                 content: [
                     {
@@ -215,7 +220,12 @@ ${args.tag ? `- Tag filter: ${args.tag}` : ''}`,
                     });
                     if (noteResult) {
                         const tagsList = note.tags && Array.isArray(note.tags) ? `Tags: ${note.tags.join(', ')}` : '';
+                        // Format the creation and modification dates
+                        const creationDate = formatBearDate(noteResult.creation_date);
+                        const modificationDate = formatBearDate(noteResult.modification_date);
+                        // Add title, creation and modification dates to the content
                         let content = noteResult.note || 'Content not available';
+                        content = `Title: ${noteResult.title}\nCreated: ${creationDate}\nModified: ${modificationDate}\n\n${content}`;
                         fullNotes.push({
                             title: note.title,
                             id: note.identifier,

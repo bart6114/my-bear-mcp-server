@@ -48,6 +48,8 @@ export declare class BearDB {
         note: string;
         title: string;
         id: string;
+        creation_date: number;
+        modification_date: number;
     } | null;
     /**
      * Searches for notes
@@ -58,6 +60,8 @@ export declare class BearDB {
         identifier: string;
         title: string;
         tags: string[];
+        creation_date: number;
+        modification_date: number;
     }>;
     /**
      * Gets all tags
@@ -75,6 +79,8 @@ export declare class BearDB {
         identifier: string;
         title: string;
         tags: string[];
+        creation_date: number;
+        modification_date: number;
     }>;
     /**
      * Gets tags for a note

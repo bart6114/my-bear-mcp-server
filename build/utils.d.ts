@@ -2,6 +2,12 @@
  * Utility functions for the Bear MCP server
  */
 /**
+ * Formats a Bear timestamp (seconds since January 1, 2001) to a human-readable date string
+ * @param timestamp Bear timestamp (seconds since January 1, 2001)
+ * @returns Formatted date string
+ */
+export declare function formatBearDate(timestamp: number): string;
+/**
  * Converts a JavaScript object to a comma-separated list of tags
  * @param tags Array of tags or comma-separated string
  * @returns Comma-separated string of tags

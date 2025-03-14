@@ -2,6 +2,18 @@
  * Utility functions for the Bear MCP server
  */
 /**
+ * Formats a Bear timestamp (seconds since January 1, 2001) to a human-readable date string
+ * @param timestamp Bear timestamp (seconds since January 1, 2001)
+ * @returns Formatted date string
+ */
+export function formatBearDate(timestamp) {
+    // Bear uses Core Data timestamps, which are seconds since January 1, 2001
+    const referenceDate = new Date('2001-01-01T00:00:00Z');
+    const date = new Date(referenceDate.getTime() + (timestamp * 1000));
+    // Format the date as a human-readable string
+    return date.toLocaleString();
+}
+/**
  * Converts a JavaScript object to a comma-separated list of tags
  * @param tags Array of tags or comma-separated string
  * @returns Comma-separated string of tags

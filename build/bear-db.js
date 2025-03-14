@@ -44,7 +44,8 @@ export class BearDB {
             if (params.id) {
                 // Get note by ID
                 note = this.db.prepare(`
-          SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as text, ZTRASHED as trashed
+          SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as text, ZTRASHED as trashed, 
+          ZCREATIONDATE as creation_date, ZMODIFICATIONDATE as modification_date
           FROM ZSFNOTE
           WHERE ZUNIQUEIDENTIFIER = ?
         `).get(params.id);
@@ -52,7 +53,8 @@ export class BearDB {
             else if (params.title) {
                 // Get note by title
                 note = this.db.prepare(`
-          SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as text, ZTRASHED as trashed
+          SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as text, ZTRASHED as trashed, 
+          ZCREATIONDATE as creation_date, ZMODIFICATIONDATE as modification_date
           FROM ZSFNOTE
           WHERE ZTITLE = ?
         `).get(params.title);
@@ -83,7 +85,9 @@ export class BearDB {
             return {
                 note: noteText,
                 title: note.title,
-                id: note.id
+                id: note.id,
+                creation_date: note.creation_date,
+                modification_date: note.modification_date
             };
         }
         catch (error) {
@@ -101,7 +105,9 @@ export class BearDB {
             let query = `
         SELECT 
           n.ZUNIQUEIDENTIFIER as identifier, 
-          n.ZTITLE as title
+          n.ZTITLE as title,
+          n.ZCREATIONDATE as creation_date,
+          n.ZMODIFICATIONDATE as modification_date
         FROM 
           ZSFNOTE n
         WHERE 
@@ -133,7 +139,9 @@ export class BearDB {
                 return {
                     identifier: note.identifier,
                     title: note.title,
-                    tags
+                    tags,
+                    creation_date: note.creation_date,
+                    modification_date: note.modification_date
                 };
             });
         }
@@ -170,7 +178,9 @@ export class BearDB {
             const notes = this.db.prepare(`
         SELECT 
           n.ZUNIQUEIDENTIFIER as identifier, 
-          n.ZTITLE as title
+          n.ZTITLE as title,
+          n.ZCREATIONDATE as creation_date,
+          n.ZMODIFICATIONDATE as modification_date
         FROM 
           ZSFNOTE n
         JOIN 
@@ -189,7 +199,9 @@ export class BearDB {
                 return {
                     identifier: note.identifier,
                     title: note.title,
-                    tags
+                    tags,
+                    creation_date: note.creation_date,
+                    modification_date: note.modification_date
                 };
             });
         }
